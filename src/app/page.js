@@ -1,65 +1,206 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect } from 'react';
+import Header from './components/Header';
+import Hero from './components/Hero';
+import CategoryNav from './components/CategoryNav';
+import MenuItemCard from './components/MenuItemCard';
+import PopularItemCard from './components/PopularItemCard';
+import CartSidebar from './components/CartSidebar';
+import Footer from './components/Footer';
+import { menuItems, categories } from '../data/menuData';
 
 export default function Home() {
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [cart, setCart] = useState([]);
+  const [showCart, setShowCart] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Handle scroll for header effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Filter items by category and search
+  const filteredItems = menuItems.filter(item => {
+    const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  // Get popular items
+  const popularItems = menuItems.filter(item => item.popular);
+
+  // Calculate cart item count
+  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+
+  // Add item to cart
+  const addToCart = (item) => {
+    if (!item.available) return;
+    
+    setCart(prevCart => {
+      const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
+      if (existingItem) {
+        return prevCart.map(cartItem =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
+        );
+      } else {
+        return [...prevCart, { 
+          ...item, 
+          quantity: 1,
+          specialInstructions: ''
+        }];
+      }
+    });
+  };
+
+  // Remove item from cart
+  const removeFromCart = (itemId) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === itemId);
+      if (existingItem.quantity === 1) {
+        return prevCart.filter(item => item.id !== itemId);
+      } else {
+        return prevCart.map(item =>
+          item.id === itemId
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        );
+      }
+    });
+  };
+
+  // Update special instructions
+  const updateInstructions = (itemId, instructions) => {
+    setCart(prevCart =>
+      prevCart.map(item =>
+        item.id === itemId
+          ? { ...item, specialInstructions: instructions }
+          : item
+      )
+    );
+  };
+
+  // Calculate total
+  const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+  // Clear cart
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  // Place order
+  const placeOrder = () => {
+    if (cart.length === 0) return;
+    
+    const orderDetails = {
+      items: cart,
+      total: cartTotal,
+      tableNumber: 'T01',
+      orderTime: new Date().toLocaleString()
+    };
+    
+    console.log('Order placed:', orderDetails);
+    alert(`Order placed successfully! Total: ETB ${cartTotal}\nYour order has been sent to the kitchen.`);
+    setCart([]);
+    setShowCart(false);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <Header
+        isScrolled={isScrolled}
+        cartItemCount={cartItemCount}
+        onShowCart={() => setShowCart(true)}
+        onShowSearch={() => setShowSearch(!showSearch)}
+        showSearch={showSearch}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
+
+      {/* Hero Section */}
+      <Hero />
+
+      {/* Category Navigation */}
+      <CategoryNav
+        categories={categories}
+        activeCategory={activeCategory}
+        onCategoryChange={setActiveCategory}
+      />
+
+      {/* Popular Items Section */}
+      {activeCategory === 'All' && popularItems.length > 0 && (
+        <section className="max-w-7xl mx-auto px-6 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-serif font-light text-gray-900 mb-4">Signature Dishes</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Our most beloved creations, crafted with passion and expertise</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {popularItems.map(item => (
+              <PopularItemCard
+                key={item.id}
+                item={item}
+                onAddToCart={addToCart}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Main Menu Section */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-serif font-light text-gray-900 mb-4">
+            {activeCategory === 'All' ? 'Complete Menu' : activeCategory}
+          </h2>
+          <p className="text-gray-600">
+            {filteredItems.length} items found
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {filteredItems.map(item => (
+            <MenuItemCard
+              key={item.id}
+              item={item}
+              onAddToCart={addToCart}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          ))}
         </div>
-      </main>
+
+        {filteredItems.length === 0 && (
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">🍽️</div>
+            <h3 className="text-2xl font-serif text-gray-900 mb-2">No items found</h3>
+            <p className="text-gray-600">Try adjusting your search or select a different category</p>
+          </div>
+        )}
+      </section>
+
+      {/* Cart Sidebar */}
+      <CartSidebar
+        showCart={showCart}
+        cart={cart}
+        cartTotal={cartTotal}
+        onClose={() => setShowCart(false)}
+        onAddToCart={addToCart}
+        onRemoveFromCart={removeFromCart}
+        onUpdateInstructions={updateInstructions}
+        onClearCart={clearCart}
+        onPlaceOrder={placeOrder}
+      />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
