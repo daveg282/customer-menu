@@ -137,25 +137,6 @@ export default function Home() {
         onCategoryChange={setActiveCategory}
       />
 
-      {/* Popular Items Section */}
-      {activeCategory === 'All' && popularItems.length > 0 && (
-        <section className="max-w-7xl mx-auto px-6 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-serif font-light text-gray-900 mb-4">Signature Dishes</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">Our most beloved creations, crafted with passion and expertise</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {popularItems.map(item => (
-              <PopularItemCard
-                key={item.id}
-                item={item}
-                onAddToCart={addToCart}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* Main Menu Section */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
