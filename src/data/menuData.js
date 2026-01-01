@@ -433,7 +433,7 @@ export const menuItems = [
     id: 44,
     name: "Chickoria (with Rice, Green Salad, Fries, & Pita)",
     description: "",
-    price: null, // Price not listed
+    price: 0, // Price not listed
     category: "Chicken Meals",
     available: true,
     popular: false,
